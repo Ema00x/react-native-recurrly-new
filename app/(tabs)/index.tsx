@@ -58,7 +58,7 @@ export default function App() {
                 showsHorizontalScrollIndicator={false}
                 ListEmptyComponent={
                   <Text className="home-empty-state">
-                    No up coming renewals yet.
+                    No upcoming renewals yet.
                   </Text>
                 }
               />
