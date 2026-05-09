@@ -16,8 +16,7 @@ export default function RootLayout() {
   const splashHidden = useRef(false);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout | null = null;
-
+    let timeout: number | null = null;
     const preventHide = async () => {
       try {
         await SplashScreen.preventAutoHideAsync();
