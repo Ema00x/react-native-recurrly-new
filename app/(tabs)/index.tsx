@@ -2,12 +2,11 @@ import ListHeading from "@/components/ListHeading";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import UpcomingSubscriptionCard from "@/components/UpcomingSubscriptionCard";
 import {
-  HOME_BALANCE,
-  HOME_SUBSCRIPTIONS,
-  HOME_USER,
-  UPCOMING_SUBSCRIPTIONS,
+    HOME_BALANCE,
+    HOME_SUBSCRIPTIONS,
+    HOME_USER,
+    UPCOMING_SUBSCRIPTIONS,
 } from "@/constants/data";
-import { icons } from "@/constants/icons";
 import images from "@/constants/images";
 import "@/global.css";
 import { formatCurrency } from "@/lib/utils";
@@ -23,6 +22,7 @@ export default function App() {
   const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
     string | null
   >(null);
+
   return (
     <SafeAreaView className="flex-1  bg-background p-5">
       <FlatList
@@ -33,7 +33,6 @@ export default function App() {
                 <Image source={images.avatar} className="home-avatar"></Image>
                 <Text className="home-user-name">{HOME_USER.name}</Text>
               </View>
-              <Image source={icons.add} className="home-add-icon"></Image>
             </View>
             <View className="home-balance-card">
               <Text className="home-balance-label">Balance</Text>

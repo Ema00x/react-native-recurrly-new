@@ -1,7 +1,15 @@
 import "@/global.css";
+import { ClerkProvider } from "@clerk/expo";
+import { tokenCache } from "@clerk/expo/token-cache";
 import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+
+// ✅ Static env var access for Expo/Metro bundler inlining
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+if (!publishableKey) {
+  throw new Error("Missing environment variable: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -12,29 +20,28 @@ export default function RootLayout() {
     "sans-extrabold": require("../assets/fonts/PlusJakartaSans-ExtraBold.ttf"),
     "sans-light": require("../assets/fonts/PlusJakartaSans-Light.ttf"),
   });
+
   const [isReady, setIsReady] = useState(false);
   const splashHidden = useRef(false);
 
   useEffect(() => {
-    let timeout: number | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+
     const preventHide = async () => {
       try {
         await SplashScreen.preventAutoHideAsync();
-      } catch {
-        // ignore failure and continue to ensure the app can still render
-      }
+      } catch {}
     };
 
     const hideSplash = async () => {
-      if (splashHidden.current) {
-        return;
-      }
+      if (splashHidden.current) return;
+
       splashHidden.current = true;
+
       try {
         await SplashScreen.hideAsync();
-      } catch {
-        // ignore hide errors
-      }
+      } catch {}
+
       setIsReady(true);
     };
 
@@ -49,15 +56,16 @@ export default function RootLayout() {
     }
 
     return () => {
-      if (timeout) {
-        clearTimeout(timeout);
-      }
+      if (timeout) clearTimeout(timeout);
     };
   }, [fontsLoaded]);
 
-  if (!isReady) {
-    return null;
-  }
+  if (!isReady) return null;
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </ClerkProvider>
+  );
 }
+ 
