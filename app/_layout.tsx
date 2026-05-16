@@ -5,16 +5,11 @@ import { useFonts } from "expo-font";
 import { SplashScreen, Stack } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 
-// ✅ Safe helper to guarantee string
-function getEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing environment variable: ${name}`);
-  }
-  return value;
+// ✅ Static env var access for Expo/Metro bundler inlining
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+if (!publishableKey) {
+  throw new Error("Missing environment variable: EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
 }
-
-const publishableKey = getEnv("EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY");
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -73,3 +68,4 @@ export default function RootLayout() {
     </ClerkProvider>
   );
 }
+ 

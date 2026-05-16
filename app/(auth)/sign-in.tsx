@@ -2,12 +2,12 @@ import { useOAuth, useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
 import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
 interface SignInErrors {
@@ -19,7 +19,7 @@ interface SignInErrors {
 }
 
 export default function SignIn() {
-  const { signIn, errors, fetchStatus } = useSignIn();
+  const { signIn, errors, fetchStatus, isLoaded } = useSignIn();
   const { startOAuthFlow } = useOAuth({ strategy: "oauth_google" });
   const router = useRouter();
 
@@ -28,10 +28,39 @@ export default function SignIn() {
   const [code, setCode] = React.useState("");
   const [localErrors, setLocalErrors] = React.useState<string[]>([]);
   const [isGoogleLoading, setIsGoogleLoading] = React.useState(false);
+  const [mfaStrategy, setMfaStrategy] = React.useState<string | null>(null);
 
   const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(value);
+  };
+
+  const getMfaFactorAndSend = async (
+    strategies: string[],
+  ): Promise<string | null> => {
+    const availableFactor = signIn.supportedSecondFactors?.find(
+      (factor: { strategy: string }) => strategies.includes(factor.strategy),
+    );
+
+    if (!availableFactor) return null;
+
+    try {
+      const strategy = availableFactor.strategy;
+      if (strategy === "email_code") {
+        await signIn.mfa.sendEmailCode();
+      } else if (strategy === "phone_code") {
+        await signIn.mfa.sendSmsCode();
+      } else if (strategy === "totp") {
+        // TOTP doesn't require sending, user enters their app secret
+        // No send step needed
+      } else if (strategy === "backup_code") {
+        // Backup code is provided, no send step needed
+      }
+      return strategy;
+    } catch (error) {
+      console.error("Error sending MFA code:", error);
+      return null;
+    }
   };
 
   const handleGoogleSignIn = async () => {
@@ -52,6 +81,8 @@ export default function SignIn() {
   };
 
   const handleSignIn = async () => {
+    if (!isLoaded) return;
+
     setLocalErrors([]);
 
     // Client-side validation
@@ -98,21 +129,25 @@ export default function SignIn() {
         });
       } else if (signIn.status === "needs_second_factor") {
         // User needs additional verification
-        const emailCodeFactor = signIn.supportedSecondFactors?.find(
-          (factor: { strategy: string }) => factor.strategy === "email_code",
-        );
-
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
+        const strategy = await getMfaFactorAndSend([
+          "email_code",
+          "phone_code",
+          "totp",
+          "backup_code",
+        ]);
+        if (strategy) {
+          setMfaStrategy(strategy);
         }
       } else if (signIn.status === "needs_client_trust") {
         // Client trust verification needed
-        const emailCodeFactor = signIn.supportedSecondFactors?.find(
-          (factor: { strategy: string }) => factor.strategy === "email_code",
-        );
-
-        if (emailCodeFactor) {
-          await signIn.mfa.sendEmailCode();
+        const strategy = await getMfaFactorAndSend([
+          "email_code",
+          "phone_code",
+          "totp",
+          "backup_code",
+        ]);
+        if (strategy) {
+          setMfaStrategy(strategy);
         }
       }
     } catch (error) {
@@ -121,6 +156,8 @@ export default function SignIn() {
   };
 
   const handleVerifyCode = async () => {
+    if (!isLoaded || !mfaStrategy) return;
+
     setLocalErrors([]);
 
     if (!code.trim()) {
@@ -129,7 +166,15 @@ export default function SignIn() {
     }
 
     try {
-      await signIn.mfa.verifyEmailCode({ code });
+      if (mfaStrategy === "email_code") {
+        await signIn.mfa.verifyEmailCode({ code });
+      } else if (mfaStrategy === "phone_code") {
+        await signIn.mfa.verifySmsCode({ code });
+      } else if (mfaStrategy === "totp") {
+        await signIn.mfa.verifyTOTPCode({ code });
+      } else if (mfaStrategy === "backup_code") {
+        await signIn.mfa.verifyBackupCode({ code });
+      }
 
       if (signIn.status === "complete") {
         await signIn.finalize({
@@ -159,8 +204,14 @@ export default function SignIn() {
   };
 
   const handleResendCode = async () => {
+    if (!isLoaded || !mfaStrategy) return;
+
     try {
-      await signIn.mfa.sendEmailCode();
+      if (mfaStrategy === "email_code") {
+        await signIn.mfa.sendEmailCode();
+      } else if (mfaStrategy === "phone_code") {
+        await signIn.mfa.sendSmsCode();
+      }
       setLocalErrors([]);
     } catch (error) {
       console.error("Resend error:", error);
@@ -168,6 +219,8 @@ export default function SignIn() {
   };
 
   const handleStartOver = async () => {
+    if (!isLoaded) return;
+
     try {
       await signIn.reset();
       setEmail("");
@@ -196,7 +249,15 @@ export default function SignIn() {
               Verify your account
             </Text>
             <Text className="mt-2 text-base text-mutedForeground">
-              We sent a verification code to {email}
+              {mfaStrategy === "email_code"
+                ? `We sent a verification code to ${email}`
+                : mfaStrategy === "phone_code"
+                  ? "We sent a verification code via SMS"
+                  : mfaStrategy === "totp"
+                    ? "Enter the code from your authenticator app"
+                    : mfaStrategy === "backup_code"
+                      ? "Enter a backup code"
+                      : "Enter verification code"}
             </Text>
           </View>
 
@@ -396,7 +457,7 @@ export default function SignIn() {
         {/* Sign Up Link */}
         <View className="flex-row items-center justify-center gap-1">
           <Text className="font-sans-regular text-sm text-mutedForeground">
-            Don't have an account?
+            {"Don't have an account?"}
           </Text>
           <Link href="/(auth)/sign-up" asChild>
             <Pressable>

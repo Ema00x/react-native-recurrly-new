@@ -78,12 +78,12 @@ Production-ready with:
 ### ✅ Navigation Protection
 
 - **Auth Layout** (`app/(auth)/_layout.tsx`): Redirects signed-in users to home
-- **Tabs Layout** (`app/(tabs)/_layout.tsx`): Redirects unsigned-out users to sign-in
+- **Tabs Layout** (`app/(tabs)/_layout.tsx`): Redirects signed-out users to sign-in
 - **Root Index** (`app/index.tsx`): Smart redirect based on auth state
 
 ## File Structure
 
-```
+```text
 app/
 ├── _layout.tsx                    # Root layout with ClerkProvider
 ├── index.tsx                      # Smart auth-based routing
@@ -160,7 +160,7 @@ Updated with Clerk and secure storage plugins:
 ### 1. Install Dependencies (if not already done)
 
 ```bash
-cd /Users/chaimae/Desktop/react_native_recurrly
+cd react_native_recurrly  # Navigate to the project root directory
 npx expo install @clerk/expo expo-secure-store
 ```
 

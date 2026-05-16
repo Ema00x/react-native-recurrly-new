@@ -50,7 +50,7 @@
 
 5. **`app/(tabs)/_layout.tsx`**
    - Added auth state checking
-   - Redirects unsigned-out users to auth
+   - Redirects signed-out users to auth
    - Protected tab navigation
 
 6. **`app.json`**
